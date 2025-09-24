@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import type { Task } from "./TaskManager";
 
 interface TaskFormProps {
-  onSubmit: (task: Omit<Task, "id" | "created_at">) => Promise<void>;
+  onSubmit: (task: Omit<Task, "id" | "created_at" | "user_id">) => Promise<void>;
   loading: boolean;
 }
 

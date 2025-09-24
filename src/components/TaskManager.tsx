@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import { TaskForm } from "./TaskForm";
 import { TaskList } from "./TaskList";
 import { toast } from "@/hooks/use-toast";
-import { CheckSquare, Plus } from "lucide-react";
+import { CheckSquare, Plus, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Task {
   id: string;
@@ -11,105 +14,99 @@ export interface Task {
   due_date: string;
   status: "open" | "done";
   created_at: string;
+  user_id: string;
 }
 
 const TaskManager = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
+  const { user, signOut } = useAuth();
 
-  // Mock JWT token - in real app this would come from auth
-  const jwtToken = "your-jwt-token-here";
-
-  const headers = {
-    "Authorization": `Bearer ${jwtToken}`,
-    "Content-Type": "application/json",
+  const handleSignOut = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({
+        title: "错误",
+        description: "登出失败",
+        variant: "destructive",
+      });
+    }
   };
 
   const fetchTasks = async () => {
+    if (!user) return;
+    
     try {
       setLoading(true);
-      // Simulate API call - replace with actual API endpoint
-      // const response = await fetch("/list-tasks", { headers });
-      
-      // Mock data for demonstration
-      const mockTasks: Task[] = [
-        {
-          id: "1",
-          title: "完成项目文档",
-          description: "编写技术文档和用户手册",
-          due_date: "2024-02-15",
-          status: "open",
-          created_at: "2024-01-15T08:00:00Z"
-        },
-        {
-          id: "2", 
-          title: "代码审查",
-          description: "审查新功能的代码实现",
-          due_date: "2024-02-12",
-          status: "done",
-          created_at: "2024-01-14T09:30:00Z"
-        }
-      ];
-      
-      setTasks(mockTasks);
-      setLoading(false);
-    } catch (error) {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTasks((data || []).map(task => ({
+        ...task,
+        status: task.status as "open" | "done"
+      })));
+    } catch (error: any) {
       toast({
         title: "错误",
         description: "获取任务列表失败",
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
 
-  const createTask = async (taskData: Omit<Task, "id" | "created_at">) => {
+  const createTask = async (taskData: Omit<Task, "id" | "created_at" | "user_id">) => {
+    if (!user) return;
+    
     try {
       setLoading(true);
-      // Simulate API call
-      // const response = await fetch("/create-task", {
-      //   method: "POST",
-      //   headers,
-      //   body: JSON.stringify({
-      //     title: taskData.title,
-      //     description: taskData.description,
-      //     due_date: taskData.due_date
-      //   })
-      // });
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([{
+          title: taskData.title,
+          description: taskData.description,
+          due_date: taskData.due_date,
+          status: taskData.status,
+          user_id: user.id
+        }])
+        .select()
+        .single();
 
-      // Mock implementation
-      const newTask: Task = {
-        ...taskData,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-      };
-
-      setTasks(prev => [newTask, ...prev]);
-      setLoading(false);
+      if (error) throw error;
+      
+      setTasks(prev => [{
+        ...data,
+        status: data.status as "open" | "done"
+      }, ...prev]);
       
       toast({
         title: "成功",
         description: "任务创建成功",
-        variant: "default",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "错误", 
         description: "创建任务失败",
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
 
   const updateTask = async (id: string, title: string) => {
     try {
-      // Simulate API call
-      // await fetch("/update-task", {
-      //   method: "POST", 
-      //   headers,
-      //   body: JSON.stringify({ id, title })
-      // });
+      const { error } = await supabase
+        .from('tasks')
+        .update({ title })
+        .eq('id', id);
+
+      if (error) throw error;
 
       setTasks(prev => 
         prev.map(task => 
@@ -121,7 +118,7 @@ const TaskManager = () => {
         title: "成功",
         description: "任务更新成功",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "错误",
         description: "更新任务失败", 
@@ -137,12 +134,12 @@ const TaskManager = () => {
 
       const newStatus = task.status === "done" ? "open" : "done";
 
-      // Simulate API call
-      // await fetch("/update-status", {
-      //   method: "POST",
-      //   headers,
-      //   body: JSON.stringify({ id, status: newStatus })
-      // });
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: newStatus })
+        .eq('id', id);
+
+      if (error) throw error;
 
       setTasks(prev =>
         prev.map(task =>
@@ -154,7 +151,7 @@ const TaskManager = () => {
         title: "成功",
         description: `任务已${newStatus === "done" ? "完成" : "重新开启"}`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "错误",
         description: "更新状态失败",
@@ -165,12 +162,12 @@ const TaskManager = () => {
 
   const deleteTask = async (id: string) => {
     try {
-      // Simulate API call
-      // await fetch("/delete-task", {
-      //   method: "POST",
-      //   headers,
-      //   body: JSON.stringify({ id })
-      // });
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
 
       setTasks(prev => prev.filter(task => task.id !== id));
 
@@ -178,7 +175,7 @@ const TaskManager = () => {
         title: "成功",
         description: "任务删除成功",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "错误",
         description: "删除任务失败",
@@ -188,8 +185,10 @@ const TaskManager = () => {
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (user) {
+      fetchTasks();
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
@@ -202,7 +201,21 @@ const TaskManager = () => {
               Task Manager
             </h1>
           </div>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <p className="text-xl text-muted-foreground">
+              欢迎，{user?.email}
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleSignOut}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              退出登录
+            </Button>
+          </div>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             高效管理您的任务，提升工作效率
           </p>
         </div>
