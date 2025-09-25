@@ -24,7 +24,8 @@ export const FileManager = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      // Use type assertion to work around Supabase typing issue
+      const { data, error } = await (supabase as any)
         .from('documents')
         .select('*')
         .eq('user_id', user.id)
@@ -88,7 +89,7 @@ export const FileManager = () => {
       if (uploadError) throw uploadError;
 
       // Save document record to database
-      const { error: dbError } = await supabase
+      const { error: dbError } = await (supabase as any)
         .from('documents')
         .insert({
           user_id: user.id,
@@ -155,7 +156,7 @@ export const FileManager = () => {
       if (storageError) throw storageError;
 
       // Delete from database
-      const { error: dbError } = await supabase
+      const { error: dbError } = await (supabase as any)
         .from('documents')
         .delete()
         .eq('id', doc.id);
