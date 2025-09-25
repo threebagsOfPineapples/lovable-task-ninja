@@ -117,9 +117,9 @@ export const ChatInterface = ({ chatHistory, onAddMessage }: ChatInterfaceProps)
         {chatHistory.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <Bot className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">开始聊天</h3>
+            <h3 className="text-lg font-medium mb-2">开始智能对话</h3>
             <p className="text-muted-foreground text-sm">
-              上传PDF文档后，您可以向我询问文档相关的问题
+              上传各种格式文档后，向我询问文档相关的问题
             </p>
           </div>
         ) : (

@@ -6,12 +6,41 @@ import {
   FileText, 
   Trash2, 
   Loader2,
-  AlertCircle
+  AlertCircle,
+  File,
+  FileImage,
+  FileSpreadsheet,
+  FileCode,
+  Archive
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import type { Document } from "./Dashboard";
+
+// 支持的文件类型配置
+const SUPPORTED_FILE_TYPES = {
+  // 文档类型
+  'application/pdf': { icon: FileText, label: 'PDF', color: 'text-red-500' },
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': { icon: FileText, label: 'Word', color: 'text-blue-500' },
+  'application/msword': { icon: FileText, label: 'Word', color: 'text-blue-500' },
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': { icon: FileImage, label: 'PowerPoint', color: 'text-orange-500' },
+  'application/vnd.ms-powerpoint': { icon: FileImage, label: 'PowerPoint', color: 'text-orange-500' },
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': { icon: FileSpreadsheet, label: 'Excel', color: 'text-green-500' },
+  'application/vnd.ms-excel': { icon: FileSpreadsheet, label: 'Excel', color: 'text-green-500' },
+  
+  // 文本类型
+  'text/plain': { icon: FileCode, label: 'Text', color: 'text-gray-500' },
+  'text/markdown': { icon: FileCode, label: 'Markdown', color: 'text-purple-500' },
+  'text/csv': { icon: FileSpreadsheet, label: 'CSV', color: 'text-green-600' },
+  
+  // 其他格式
+  'application/rtf': { icon: FileText, label: 'RTF', color: 'text-indigo-500' },
+  'application/epub+zip': { icon: FileText, label: 'EPUB', color: 'text-teal-500' },
+};
+
+const ACCEPTED_FILE_TYPES = Object.keys(SUPPORTED_FILE_TYPES).join(',');
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export const FileManager = () => {
   const { user } = useAuth();
@@ -57,20 +86,21 @@ export const FileManager = () => {
     if (!file || !user) return;
 
     // Check file type
-    if (file.type !== 'application/pdf') {
+    if (!SUPPORTED_FILE_TYPES[file.type as keyof typeof SUPPORTED_FILE_TYPES]) {
+      const supportedFormats = Object.values(SUPPORTED_FILE_TYPES).map(type => type.label).join(', ');
       toast({
-        title: "文件类型错误",
-        description: "只支持PDF文件上传",
+        title: "文件类型不支持",
+        description: `支持的格式：${supportedFormats}`,
         variant: "destructive",
       });
       return;
     }
 
-    // Check file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
       toast({
         title: "文件过大",
-        description: "文件大小不能超过10MB",
+        description: `文件大小不能超过${Math.round(MAX_FILE_SIZE / (1024 * 1024))}MB`,
         variant: "destructive",
       });
       return;
@@ -187,6 +217,20 @@ export const FileManager = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getFileIcon = (fileType: string) => {
+    const typeConfig = SUPPORTED_FILE_TYPES[fileType as keyof typeof SUPPORTED_FILE_TYPES];
+    if (typeConfig) {
+      const IconComponent = typeConfig.icon;
+      return <IconComponent className={`h-5 w-5 ${typeConfig.color} flex-shrink-0 mt-0.5`} />;
+    }
+    return <File className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />;
+  };
+
+  const getFileTypeLabel = (fileType: string) => {
+    const typeConfig = SUPPORTED_FILE_TYPES[fileType as keyof typeof SUPPORTED_FILE_TYPES];
+    return typeConfig?.label || '未知格式';
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Upload Button */}
@@ -205,17 +249,20 @@ export const FileManager = () => {
           ) : (
             <>
               <Upload className="h-4 w-4 mr-2" />
-              上传PDF文档
+              上传文档
             </>
           )}
         </Button>
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf,application/pdf"
+          accept={ACCEPTED_FILE_TYPES}
           onChange={handleFileUpload}
           className="hidden"
         />
+        <div className="mt-2 text-xs text-muted-foreground">
+          支持: PDF, Word, Excel, PowerPoint, 文本文件等
+        </div>
       </div>
 
       {/* File List */}
@@ -229,7 +276,7 @@ export const FileManager = () => {
             <FileText className="h-12 w-12 text-muted-foreground mb-2" />
             <p className="text-muted-foreground">还没有上传任何文档</p>
             <p className="text-sm text-muted-foreground mt-1">
-              点击上方按钮上传您的第一个PDF文档
+              支持PDF、Word、Excel、PowerPoint等多种格式
             </p>
           </div>
         ) : (
@@ -239,13 +286,13 @@ export const FileManager = () => {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <FileText className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                      {getFileIcon(doc.file_type)}
                       <div className="min-w-0 flex-1">
                         <h4 className="font-medium text-sm truncate">
                           {doc.file_name}
                         </h4>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {formatFileSize(doc.file_size)} • {' '}
+                          {getFileTypeLabel(doc.file_type)} • {formatFileSize(doc.file_size)} • {' '}
                           {new Date(doc.created_at).toLocaleDateString('zh-CN')}
                         </p>
                       </div>
