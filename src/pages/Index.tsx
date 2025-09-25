@@ -1,4 +1,4 @@
-import TaskManager from "../components/TaskManager";
+import Dashboard from "../components/Dashboard";
 import AuthForm from "../components/AuthForm";
 import { useAuth } from "../hooks/useAuth";
 
@@ -16,7 +16,7 @@ const Index = () => {
     );
   }
 
-  return user ? <TaskManager /> : <AuthForm />;
+  return user ? <Dashboard /> : <AuthForm />;
 };
 
 export default Index;
