@@ -133,7 +133,7 @@ export const FileManager = () => {
 
       // Call webhook for processing (optional)
       try {
-        const response = await fetch('https://threepoy.app.n8n.cloud/webhook-test/upload-document', {
+        const response = await fetch('https://threepoy.app.n8n.cloud/webhook/upload-document', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

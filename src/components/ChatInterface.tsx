@@ -51,7 +51,7 @@ export const ChatInterface = ({ chatHistory, onAddMessage }: ChatInterfaceProps)
 
     try {
       // Call webhook for AI response
-      const response = await fetch('https://threepoy.app.n8n.cloud/webhook-test/chat', {
+      const response = await fetch('https://threepoy.app.n8n.cloud/webhook/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
