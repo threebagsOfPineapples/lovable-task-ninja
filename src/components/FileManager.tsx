@@ -42,7 +42,11 @@ const SUPPORTED_FILE_TYPES = {
 const ACCEPTED_FILE_TYPES = Object.keys(SUPPORTED_FILE_TYPES).join(',');
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
-export const FileManager = () => {
+interface FileManagerProps {
+  isTestMode: boolean;
+}
+
+export const FileManager = ({ isTestMode }: FileManagerProps) => {
   const { user } = useAuth();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -133,7 +137,8 @@ export const FileManager = () => {
 
       // Call webhook for processing (optional)
       try {
-        const response = await fetch('https://threepoy.app.n8n.cloud/webhook/upload-document', {
+        const baseUrl = isTestMode ? 'https://threepoy.app.n8n.cloud/webhook-test' : 'https://threepoy.app.n8n.cloud/webhook';
+        const response = await fetch(`${baseUrl}/upload-document`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

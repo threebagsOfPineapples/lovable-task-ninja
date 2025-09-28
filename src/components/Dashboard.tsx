@@ -3,7 +3,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { FileManager } from "./FileManager";
 import { ChatInterface } from "./ChatInterface";
 import { Button } from "@/components/ui/button";
-import { LogOut, FileText } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { LogOut, FileText, TestTube } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 export interface ChatMessage {
@@ -25,6 +27,7 @@ export interface Document {
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [isTestMode, setIsTestMode] = useState(false);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -60,11 +63,26 @@ const Dashboard = () => {
       <header className="bg-gradient-card border-b border-border/50 shadow-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <FileText className="h-8 w-8 text-primary" />
-              <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                智能文档助手
-              </h1>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <FileText className="h-8 w-8 text-primary" />
+                <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  智能文档助手
+                </h1>
+              </div>
+              
+              {/* Test Mode Switch */}
+              <div className="flex items-center gap-2">
+                <TestTube className="h-4 w-4 text-muted-foreground" />
+                <Switch
+                  id="test-mode"
+                  checked={isTestMode}
+                  onCheckedChange={setIsTestMode}
+                />
+                <Label htmlFor="test-mode" className="text-sm text-muted-foreground">
+                  测试模式
+                </Label>
+              </div>
             </div>
             
             <div className="flex items-center gap-4">
@@ -91,7 +109,7 @@ const Dashboard = () => {
           {/* File Manager */}
           <div className="bg-gradient-card rounded-2xl shadow-card border border-border/50 p-6 animate-slide-up">
             <h2 className="text-xl font-semibold mb-6">文件管理</h2>
-            <FileManager />
+            <FileManager isTestMode={isTestMode} />
           </div>
 
           {/* Chat Interface */}
@@ -110,6 +128,7 @@ const Dashboard = () => {
             <ChatInterface 
               chatHistory={chatHistory}
               onAddMessage={addMessage}
+              isTestMode={isTestMode}
             />
           </div>
         </div>

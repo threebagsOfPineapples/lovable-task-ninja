@@ -11,9 +11,10 @@ import { cn } from "@/lib/utils";
 interface ChatInterfaceProps {
   chatHistory: ChatMessage[];
   onAddMessage: (message: ChatMessage) => void;
+  isTestMode: boolean;
 }
 
-export const ChatInterface = ({ chatHistory, onAddMessage }: ChatInterfaceProps) => {
+export const ChatInterface = ({ chatHistory, onAddMessage, isTestMode }: ChatInterfaceProps) => {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,7 +52,8 @@ export const ChatInterface = ({ chatHistory, onAddMessage }: ChatInterfaceProps)
 
     try {
       // Call webhook for AI response
-      const response = await fetch('https://threepoy.app.n8n.cloud/webhook/chat', {
+      const baseUrl = isTestMode ? 'https://threepoy.app.n8n.cloud/webhook-test' : 'https://threepoy.app.n8n.cloud/webhook';
+      const response = await fetch(`${baseUrl}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
